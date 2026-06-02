@@ -1,4 +1,4 @@
-export const APP_NAME = "Ecem Sıla & Selim Günaydın";
+export const APP_NAME = "Ecem Sıla & Selim";
 
 export const MAX_IMAGE_SIZE_MB = 15;
 export const MAX_VIDEO_SIZE_MB = 300;
