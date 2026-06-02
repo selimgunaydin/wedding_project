@@ -22,10 +22,13 @@ const config: Config = {
         champagne: "hsl(var(--champagne))",
         rose: "hsl(var(--rose))",
         sage: "hsl(var(--sage))",
-        ink: "hsl(var(--ink))"
+        ink: "hsl(var(--ink))",
+        copper: "hsl(var(--copper))",
+        paper: "hsl(var(--paper))"
       },
       boxShadow: {
         soft: "0 24px 80px rgb(62 52 43 / 0.10)",
+        glow: "0 34px 100px rgb(104 69 42 / 0.18)",
         line: "0 1px 0 rgb(62 52 43 / 0.08)"
       },
       fontFamily: {

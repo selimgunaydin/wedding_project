@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Camera, CheckCircle2, UploadCloud } from "lucide-react";
+import { Camera, CheckCircle2, MessageCircle, Send, UploadCloud, User } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { UploadFileList } from "@/components/upload/UploadFileList";
 import type { UploadItemState } from "@/components/upload/UploadProgressItem";
@@ -142,11 +142,11 @@ export function UploadDropzone({ eventSlug }: UploadDropzoneProps) {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-white/70 p-4 shadow-line md:p-5">
+    <div className="paper-surface rounded-[18px] border border-white/70 p-3 md:p-4">
       <div
         className={cn(
-          "rounded-xl border border-dashed p-5 text-center transition md:p-8",
-          dragging ? "border-primary bg-champagne/35" : "border-border bg-background/60"
+          "rounded-xl border border-dashed p-4 text-center transition md:p-5",
+          dragging ? "border-primary bg-champagne/55 shadow-soft" : "border-copper/35 bg-white/52"
         )}
         onDragOver={(event) => {
           event.preventDefault();
@@ -159,9 +159,11 @@ export function UploadDropzone({ eventSlug }: UploadDropzoneProps) {
           addFiles(event.dataTransfer.files);
         }}
       >
-        <UploadCloud className="mx-auto h-10 w-10 text-rose" />
-        <h2 className="mt-4 text-xl font-semibold">Fotoğraf veya videonuzu seçin</h2>
-        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+        <div className="mx-auto grid h-12 w-12 place-items-center rounded-full border border-copper/25 bg-white/70 text-copper shadow-line">
+          <UploadCloud className="h-6 w-6" />
+        </div>
+        <h2 className="mt-3 font-serif text-2xl leading-tight">Fotoğraf veya videonuzu seçin</h2>
+        <p className="mx-auto mt-1.5 max-w-md text-xs leading-5 text-muted-foreground">
           Tek seferde {MAX_FILES_PER_UPLOAD} dosyaya kadar yükleyebilirsiniz. Fotoğraflar {MAX_IMAGE_SIZE_MB} MB, videolar{" "}
           {MAX_VIDEO_SIZE_MB} MB ile sınırlıdır.
         </p>
@@ -178,38 +180,48 @@ export function UploadDropzone({ eventSlug }: UploadDropzoneProps) {
           }}
         />
 
-        <Button className="mt-5 w-full sm:w-auto" size="lg" onClick={() => inputRef.current?.click()} disabled={uploading}>
+        <Button className="mt-4 w-full sm:w-auto" size="lg" onClick={() => inputRef.current?.click()} disabled={uploading}>
           <Camera className="h-5 w-5" />
           Dosya Seç
         </Button>
       </div>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
+      <div className="mt-3 grid gap-3 md:grid-cols-2">
         <label className="grid gap-1 text-sm font-medium">
-          Adınız
-          <input
-            value={guestName}
-            onChange={(event) => setGuestName(event.target.value)}
-            maxLength={80}
-            placeholder="İsteğe bağlı"
-            className="h-11 rounded-lg border border-border bg-white px-3 font-normal outline-none focus:ring-2 focus:ring-primary/20"
-          />
+          <span className="inline-flex items-center gap-2">
+            <User className="h-4 w-4 text-copper" />
+            Adınız
+          </span>
+          <span className="relative">
+            <input
+              value={guestName}
+              onChange={(event) => setGuestName(event.target.value)}
+              maxLength={80}
+              placeholder="İsteğe bağlı"
+              className="h-11 w-full rounded-lg border border-copper/20 bg-white/72 px-3 font-normal outline-none transition focus:border-copper/40 focus:ring-2 focus:ring-copper/15"
+            />
+          </span>
         </label>
         <label className="grid gap-1 text-sm font-medium">
-          Kısa notunuz
-          <input
-            value={guestNote}
-            onChange={(event) => setGuestNote(event.target.value)}
-            maxLength={500}
-            placeholder="İsteğe bağlı"
-            className="h-11 rounded-lg border border-border bg-white px-3 font-normal outline-none focus:ring-2 focus:ring-primary/20"
-          />
+          <span className="inline-flex items-center gap-2">
+            <MessageCircle className="h-4 w-4 text-copper" />
+            Kısa notunuz
+          </span>
+          <span className="relative">
+            <input
+              value={guestNote}
+              onChange={(event) => setGuestNote(event.target.value)}
+              maxLength={500}
+              placeholder="İsteğe bağlı"
+              className="h-11 w-full rounded-lg border border-copper/20 bg-white/72 px-3 font-normal outline-none transition focus:border-copper/40 focus:ring-2 focus:ring-copper/15"
+            />
+          </span>
         </label>
       </div>
 
       <UploadFileList items={items} />
 
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {message ? (
           <p className="flex items-center gap-2 text-sm text-emerald-700">
             <CheckCircle2 className="h-4 w-4" />
@@ -219,6 +231,7 @@ export function UploadDropzone({ eventSlug }: UploadDropzoneProps) {
           <p className="text-sm text-muted-foreground">Yükledikleriniz bize özel olarak iletilecek.</p>
         )}
         <Button onClick={startUpload} disabled={!readyToUpload || uploading} className="w-full sm:w-auto">
+          <Send className="h-4 w-4" />
           {uploading ? "Yükleniyor" : "Yüklemeyi Başlat"}
         </Button>
       </div>

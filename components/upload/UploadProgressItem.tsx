@@ -22,7 +22,7 @@ export function UploadProgressItem({ item }: { item: UploadItemState }) {
     );
 
   return (
-    <li className="rounded-lg border border-border bg-white/70 p-3">
+    <li className="rounded-lg border border-copper/15 bg-white/72 p-3 shadow-line">
       <div className="flex items-start gap-3">
         {icon}
         <div className="min-w-0 flex-1">
@@ -31,7 +31,7 @@ export function UploadProgressItem({ item }: { item: UploadItemState }) {
             <p className="shrink-0 text-xs text-muted-foreground">{formatBytes(item.file.size)}</p>
           </div>
           <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
-            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${item.progress}%` }} />
+            <div className="h-full rounded-full bg-copper transition-all" style={{ width: `${item.progress}%` }} />
           </div>
           {item.error ? <p className="mt-2 text-xs text-red-700">{item.error}</p> : null}
         </div>

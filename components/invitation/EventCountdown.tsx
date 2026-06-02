@@ -45,7 +45,10 @@ export function EventCountdown({ startsAt, compact }: EventCountdownProps) {
   return (
     <div className={cn("grid grid-cols-4 gap-2", compact ? "max-w-sm" : "max-w-xl")}>
       {parts.map((part) => (
-        <div key={part.label} className="rounded-lg border border-border bg-white/62 px-2 py-3 text-center shadow-line">
+        <div
+          key={part.label}
+          className="rounded-lg border border-copper/18 bg-white/68 px-2 py-3 text-center shadow-line backdrop-blur"
+        >
           <p className={cn("font-semibold tabular-nums", compact ? "text-lg" : "text-2xl")}>
             {String(part.value).padStart(2, "0")}
           </p>

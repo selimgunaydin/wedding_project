@@ -3,19 +3,21 @@
 @tailwind utilities;
 
 :root {
-  --background: 42 38% 97%;
-  --foreground: 28 18% 16%;
-  --border: 34 18% 84%;
-  --muted: 42 20% 92%;
-  --muted-foreground: 30 9% 43%;
-  --primary: 28 19% 20%;
+  --background: 38 44% 96%;
+  --foreground: 26 24% 15%;
+  --border: 31 29% 80%;
+  --muted: 36 31% 90%;
+  --muted-foreground: 27 13% 42%;
+  --primary: 25 28% 19%;
   --primary-foreground: 42 38% 97%;
-  --accent: 348 24% 73%;
+  --accent: 13 45% 73%;
   --accent-foreground: 28 18% 16%;
-  --champagne: 39 47% 86%;
-  --rose: 352 33% 70%;
-  --sage: 99 16% 55%;
-  --ink: 217 17% 22%;
+  --champagne: 36 56% 84%;
+  --rose: 8 54% 70%;
+  --sage: 91 16% 46%;
+  --ink: 26 29% 14%;
+  --copper: 28 49% 52%;
+  --paper: 35 52% 93%;
 }
 
 * {
@@ -30,8 +32,9 @@ body {
   min-height: 100vh;
   color: hsl(var(--foreground));
   background:
-    linear-gradient(180deg, hsl(42 38% 97%) 0%, hsl(39 31% 94%) 46%, hsl(42 24% 96%) 100%),
-    radial-gradient(circle at 10% 10%, hsl(352 33% 94% / 0.6), transparent 30%);
+    linear-gradient(135deg, hsl(37 54% 98% / 0.96) 0%, hsl(34 49% 93% / 0.9) 48%, hsl(44 44% 96% / 0.96) 100%),
+    radial-gradient(circle at 12% 8%, hsl(8 54% 88% / 0.52), transparent 28%),
+    radial-gradient(circle at 88% 0%, hsl(32 70% 82% / 0.36), transparent 32%);
   font-feature-settings: "kern";
 }
 
@@ -48,8 +51,56 @@ select {
 }
 
 .container-shell {
-  width: min(1120px, calc(100% - 32px));
+  width: min(1180px, calc(100% - 32px));
   margin-inline: auto;
+}
+
+.font-script {
+  font-family: "Snell Roundhand", "Apple Chancery", "Brush Script MT", cursive;
+}
+
+.paper-surface {
+  background:
+    linear-gradient(135deg, hsl(var(--paper) / 0.92), hsl(39 58% 97% / 0.88)),
+    radial-gradient(circle at 20% 0%, hsl(8 64% 86% / 0.2), transparent 34%),
+    radial-gradient(circle at 80% 100%, hsl(31 70% 79% / 0.2), transparent 28%);
+  box-shadow: 0 24px 90px rgb(69 48 32 / 0.12), inset 0 0 0 1px rgb(157 107 56 / 0.16);
+}
+
+.copper-line {
+  background: linear-gradient(90deg, transparent, hsl(var(--copper) / 0.72), transparent);
+}
+
+.floral-frame {
+  position: relative;
+  isolation: isolate;
+}
+
+.floral-frame::before,
+.floral-frame::after {
+  pointer-events: none;
+  position: absolute;
+  z-index: -1;
+  content: "";
+  background-image: url("/images/floral-invitation-poster.png");
+  background-size: cover;
+  background-position: center;
+  opacity: 0.15;
+  filter: saturate(1.06);
+}
+
+.floral-frame::before {
+  inset: 0 auto auto 0;
+  width: min(42vw, 360px);
+  height: min(42vw, 360px);
+  clip-path: polygon(0 0, 100% 0, 66% 38%, 38% 66%, 0 100%);
+}
+
+.floral-frame::after {
+  inset: auto 0 0 auto;
+  width: min(46vw, 420px);
+  height: min(46vw, 420px);
+  clip-path: polygon(34% 62%, 62% 34%, 100% 0, 100% 100%, 0 100%);
 }
 
 .a4-page {
