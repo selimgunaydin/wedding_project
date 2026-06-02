@@ -11,7 +11,7 @@ export const metadata: Metadata = {
       "Fotoğraf ve videoları QR kod ile paylaşın, tüm anıları tek yerde biriktirelim.",
     images: [
       {
-        url: "/og-image.jpg",
+        url: "/og-image.png",
         width: 1200,
         height: 630,
         alt: "Ecem Sıla & Selim Günaydın",
