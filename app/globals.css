@@ -73,6 +73,9 @@ select {
 
 .floral-frame {
   position: relative;
+  min-height: 100vh;
+  min-height: 100svh;
+  overflow: hidden;
   isolation: isolate;
 }
 
@@ -81,15 +84,19 @@ select {
   pointer-events: none;
   position: absolute;
   z-index: -1;
+  top: -200px;
+  left: 0;
+  right: 0;
+  bottom: 0;
   content: "";
-  background-image: url("/images/floral-invitation-poster.png");
+  background-image: url("/images/hero.png");
   background-size: cover;
-  background-position: center;
-  opacity: 0.15;
+  background-position: center top;
+  background-repeat: no-repeat;
+  opacity: 0.10;
   filter: saturate(1.06);
 }
-
-.floral-frame::before {
+/* .floral-frame::before {
   inset: 0 auto auto 0;
   width: min(42vw, 360px);
   height: min(42vw, 360px);
@@ -101,7 +108,7 @@ select {
   width: min(46vw, 420px);
   height: min(46vw, 420px);
   clip-path: polygon(34% 62%, 62% 34%, 100% 0, 100% 100%, 0 100%);
-}
+} */
 
 .a4-page {
   width: min(100%, 210mm);

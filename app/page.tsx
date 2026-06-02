@@ -13,7 +13,7 @@ export default async function HomePage() {
   const primarySchedule = primaryEvent ? getEventSchedule(primaryEvent) : null;
 
   return (
-    <main className="min-h-screen overflow-hidden floral-frame">
+    <main className="min-h-screen overflow-hidden floral-frame px-4 py-4 md:grid md:place-items-center md:py-6">
       <section className="relative border-b border-copper/20 px-4 py-8 md:grid md:min-h-screen md:place-items-center md:py-10">
         <div className="mx-auto w-full max-w-3xl text-center">
           <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-copper/25 bg-white/70 px-3 py-1.5 text-sm text-muted-foreground shadow-line backdrop-blur">
@@ -52,12 +52,21 @@ export default async function HomePage() {
 
           <div className="mx-auto mt-6 flex max-w-xl flex-col gap-3 sm:flex-row">
             {primaryEvent ? (
-              <ButtonLink href={`/events/${primaryEvent.slug}`} size="lg" className="h-[52px] flex-1">
+              <ButtonLink
+                href={`/events/${primaryEvent.slug}`}
+                size="md"
+                className="min-h-[40px] flex-1 px-6 py-4 text-[15px] leading-none shadow-soft"
+              >
                 <UploadCloud className="h-5 w-5" />
                 Anı Yükle
               </ButtonLink>
             ) : null}
-            <ButtonLink href="#gunlerimiz" size="lg" variant="outline" className="h-[52px] flex-1">
+            <ButtonLink
+              href="#gunlerimiz"
+              size="md"
+              variant="outline"
+              className="min-h-[40px] flex-1 px-6 py-4 text-[15px] leading-none shadow-soft"
+            >
               Tarihleri Gör
             </ButtonLink>
           </div>
