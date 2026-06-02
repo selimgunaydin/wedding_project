@@ -1,19 +1,27 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { UploadDropzone } from "@/components/upload/UploadDropzone";
 import { getEventBySlug } from "@/lib/db";
 import { formatLongDate } from "@/lib/format";
+import { buildEventMetadata, buildPageMetadata } from "@/lib/metadata";
 
 type EventDetailPageProps = {
   params: Promise<{ slug: string }>;
 };
 
-export async function generateMetadata({ params }: EventDetailPageProps) {
+export async function generateMetadata({ params }: EventDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
   const event = await getEventBySlug(slug);
 
-  return {
-    title: event ? `${event.title} Fotoğraf Yükleme` : "Fotoğraf Yükleme"
-  };
+  if (!event) {
+    return buildPageMetadata({
+      title: "Fotoğraf ve Video Yükleme",
+      path: `/events/${slug}`,
+      noIndex: true
+    });
+  }
+
+  return buildEventMetadata(event);
 }
 
 export default async function EventDetailPage({ params }: EventDetailPageProps) {

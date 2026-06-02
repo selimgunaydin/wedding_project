@@ -1,40 +1,60 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { APP_NAME } from "@/lib/constants";
+import { buildPageMetadata, DEFAULT_DESCRIPTION, SITE_URL } from "@/lib/metadata";
 import "./globals.css";
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://es.selwise.com";
+const rootMetadata = buildPageMetadata({
+  title: APP_NAME,
+  description: DEFAULT_DESCRIPTION,
+  path: "/",
+  imageAlt: `${APP_NAME} anı paylaşımı`
+});
 
 export const metadata: Metadata = {
-  metadataBase: new URL(appUrl),
-
-  title: "Ecem Sıla & Selim",
-  description:
-    "Bizimle bu özel günlerimizden kalan fotoğraf ve videoları QR kod ile kolayca paylaşın.",
-
-  openGraph: {
-    title: "Ecem Sıla & Selim",
-    description:
-      "Fotoğraf ve videoları QR kod ile paylaşın, tüm anıları tek yerde biriktirelim.",
-    url: appUrl,
-    siteName: "Ecem Sıla & Selim",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "Ecem Sıla & Selim",
-      },
-    ],
-    type: "website",
-    locale: "tr_TR",
+  ...rootMetadata,
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: APP_NAME,
+    template: `%s | ${APP_NAME}`
   },
-
-  twitter: {
-    card: "summary_large_image",
-    title: "Ecem Sıla & Selim",
-    description:
-      "Fotoğraf ve videoları QR kod ile paylaşın, tüm anıları tek yerde biriktirelim.",
-    images: ["/og-image.png"],
+  applicationName: APP_NAME,
+  authors: [{ name: APP_NAME, url: SITE_URL }],
+  creator: APP_NAME,
+  publisher: APP_NAME,
+  category: "wedding",
+  keywords: [
+    "Ecem Sıla",
+    "Selim",
+    "düğün",
+    "nişan",
+    "anı paylaşımı",
+    "fotoğraf yükleme",
+    "video yükleme",
+    "QR kod"
+  ],
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico"
   },
+  appleWebApp: {
+    capable: true,
+    title: APP_NAME,
+    statusBarStyle: "default"
+  },
+  formatDetection: {
+    telephone: false
+  },
+  other: {
+    "og:image:secure_url": `${SITE_URL}/og-image.png`,
+    "og:image:type": "image/png",
+    "og:image:width": "1200",
+    "og:image:height": "630"
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#f7eee8",
+  colorScheme: "light"
 };
 
 export default function RootLayout({
