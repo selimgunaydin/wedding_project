@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { CalendarDays, LayoutDashboard, LogOut, UploadCloud } from "lucide-react";
+import { CalendarDays, LayoutDashboard, LogOut, QrCode, UploadCloud } from "lucide-react";
 import { APP_NAME } from "@/lib/constants";
 
 const links = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/events", label: "Etkinlikler", icon: CalendarDays },
+  { href: "/admin/qr", label: "QR Kodlar", icon: QrCode },
   { href: "/admin/uploads", label: "Yüklemeler", icon: UploadCloud }
 ];
 

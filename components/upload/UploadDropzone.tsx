@@ -138,7 +138,7 @@ export function UploadDropzone({ eventSlug }: UploadDropzoneProps) {
       }
     }
 
-    setMessage("Anınız başarıyla gönderildi. Onaylandıktan sonra galeride görünecektir.");
+    setMessage("Anınız başarıyla gönderildi. Bizimle paylaştığınız için teşekkür ederiz.");
   }
 
   return (
@@ -216,7 +216,7 @@ export function UploadDropzone({ eventSlug }: UploadDropzoneProps) {
             {message}
           </p>
         ) : (
-          <p className="text-sm text-muted-foreground">Yükledikleriniz onaylandıktan sonra galeride görünecek.</p>
+          <p className="text-sm text-muted-foreground">Yükledikleriniz bize özel olarak iletilecek.</p>
         )}
         <Button onClick={startUpload} disabled={!readyToUpload || uploading} className="w-full sm:w-auto">
           {uploading ? "Yükleniyor" : "Yüklemeyi Başlat"}

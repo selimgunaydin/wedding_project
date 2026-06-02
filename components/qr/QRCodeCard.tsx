@@ -12,9 +12,10 @@ import { getQrPosterFileName } from "@/lib/qr";
 type QRCodeCardProps = {
   event: EventRecord;
   url: string;
+  printHref: string;
 };
 
-export function QRCodeCard({ event, url }: QRCodeCardProps) {
+export function QRCodeCard({ event, url, printHref }: QRCodeCardProps) {
   const [qrDataUrl, setQrDataUrl] = useState("");
 
   useEffect(() => {
@@ -54,7 +55,7 @@ export function QRCodeCard({ event, url }: QRCodeCardProps) {
           <Download className="h-4 w-4" />
           PNG indir
         </Button>
-        <ButtonLink href={`/qr/${event.slug}?print=1`} size="sm" variant="secondary">
+        <ButtonLink href={printHref} size="sm" variant="secondary">
           <Printer className="h-4 w-4" />
           Baskı görünümü
         </ButtonLink>

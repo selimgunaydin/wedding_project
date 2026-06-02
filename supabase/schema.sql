@@ -66,6 +66,3 @@ on public.events for select
 using (is_active = true);
 
 drop policy if exists "Public can read approved uploads" on public.uploads;
-create policy "Public can read approved uploads"
-on public.uploads for select
-using (status = 'approved');

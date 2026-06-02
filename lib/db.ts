@@ -59,45 +59,6 @@ export async function getEventById(id: string) {
   return (data as EventRecord | null) ?? null;
 }
 
-export async function getApprovedUploadsByEventSlug(eventSlug: string, limit = 24) {
-  const client = getSupabasePublicClient();
-  if (!client) return [];
-
-  const { data, error } = await client
-    .from("uploads")
-    .select("*")
-    .eq("event_slug", eventSlug)
-    .eq("status", "approved")
-    .order("created_at", { ascending: false })
-    .limit(limit);
-
-  if (error) {
-    console.error("getApprovedUploadsByEventSlug", error);
-    return [];
-  }
-
-  return (data ?? []) as UploadRecord[];
-}
-
-export async function getRecentApprovedUploads(limit = 9) {
-  const client = getSupabasePublicClient();
-  if (!client) return [];
-
-  const { data, error } = await client
-    .from("uploads")
-    .select("*")
-    .eq("status", "approved")
-    .order("created_at", { ascending: false })
-    .limit(limit);
-
-  if (error) {
-    console.error("getRecentApprovedUploads", error);
-    return [];
-  }
-
-  return (data ?? []) as UploadRecord[];
-}
-
 export async function createUploadRecord(input: {
   event: EventRecord;
   fileName: string;

@@ -38,7 +38,7 @@ ADMIN_PASSWORD=
 3. Ardından `supabase/seed.sql` dosyasını çalıştırın.
 4. `SUPABASE_URL`, `SUPABASE_ANON_KEY` ve `SUPABASE_SERVICE_ROLE_KEY` değerlerini `.env.local` içine ekleyin.
 
-Public taraf aktif etkinlikleri ve yalnızca `approved` medyaları okur. Insert/update/delete işlemleri server tarafında service role key ile yapılır.
+Public taraf sadece aktif etkinlik bilgisini okuyarak QR'dan gelen yükleme sayfasını açar. Medya kayıtlarını listeleme, onaylama, silme ve indirme işlemleri admin tarafında server-side service role key ile yapılır.
 
 ## 4. Contabo Object Storage kurulumu
 
@@ -96,14 +96,13 @@ pnpm build
 Ana route'lar:
 
 - `/`
-- `/events`
 - `/events/[slug]`
-- `/qr`
-- `/qr/[slug]`
 - `/admin/login`
 - `/admin`
 - `/admin/events`
 - `/admin/events/[id]`
+- `/admin/qr`
+- `/admin/qr/[slug]`
 - `/admin/uploads`
 
 ## 9. Production deploy
@@ -117,12 +116,12 @@ Ana route'lar:
 
 ## 10. QR kodların indirilmesi
 
-`/qr` sayfasında tüm etkinlik QR kartları bulunur. Her kartta PNG indir ve baskı görünümü butonları vardır. Tek etkinlik poster görünümü:
+QR kodlar public sitede görünmez. Admin panelde `/admin/qr` sayfasında tüm etkinlik QR kartları bulunur. Her kartta PNG indir ve baskı görünümü butonları vardır. Tek etkinlik poster görünümü:
 
 ```text
-/qr/nisan-21-06-2026?print=1
-/qr/dugun-1-02-08-2026?print=1
-/qr/dugun-2-29-08-2026?print=1
+/admin/qr/nisan-21-06-2026?print=1
+/admin/qr/dugun-1-02-08-2026?print=1
+/admin/qr/dugun-2-29-08-2026?print=1
 ```
 
 `print=1` parametresi tarayıcı print penceresini otomatik açar.
@@ -142,6 +141,6 @@ Büyük video dosyaları Next.js server üzerinden akmaz. Akış:
 3. Server Contabo için kısa süreli signed URL üretir.
 4. Client dosyayı doğrudan Contabo Object Storage'a PUT eder.
 5. Client `/api/upload/complete` ile metadata kaydını oluşturur.
-6. Kayıt `pending` olur; public galeride yalnızca `approved` kayıtlar görünür.
+6. Kayıt `pending` olur; medya yalnızca admin panelinde yönetilir.
 
 Contabo tarafında kullanım büyürse lifecycle policy, CDN cache ve video thumbnail üretimi eklemek iyi bir sonraki adımdır.
