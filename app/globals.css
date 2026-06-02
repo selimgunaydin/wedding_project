@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 42 38% 97%;
+  --foreground: 28 18% 16%;
+  --border: 34 18% 84%;
+  --muted: 42 20% 92%;
+  --muted-foreground: 30 9% 43%;
+  --primary: 28 19% 20%;
+  --primary-foreground: 42 38% 97%;
+  --accent: 348 24% 73%;
+  --accent-foreground: 28 18% 16%;
+  --champagne: 39 47% 86%;
+  --rose: 352 33% 70%;
+  --sage: 99 16% 55%;
+  --ink: 217 17% 22%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  color: hsl(var(--foreground));
+  background:
+    linear-gradient(180deg, hsl(42 38% 97%) 0%, hsl(39 31% 94%) 46%, hsl(42 24% 96%) 100%),
+    radial-gradient(circle at 10% 10%, hsl(352 33% 94% / 0.6), transparent 30%);
+  font-feature-settings: "kern";
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+::selection {
+  color: hsl(var(--primary-foreground));
+  background: hsl(var(--primary));
+}
+
+.container-shell {
+  width: min(1120px, calc(100% - 32px));
+  margin-inline: auto;
+}
+
+.a4-page {
+  width: min(100%, 210mm);
+  min-height: 297mm;
+}
+
+@media print {
+  body {
+    background: white;
+  }
+
+  .print-hidden {
+    display: none !important;
+  }
+
+  .a4-page {
+    width: 210mm;
+    min-height: 297mm;
+    box-shadow: none !important;
+    border: 0 !important;
+  }
+}
