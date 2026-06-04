@@ -21,8 +21,8 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 SUPABASE_URL=
 SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
-CONTABO_S3_ENDPOINT=
-CONTABO_S3_REGION=eu-central-1
+CONTABO_S3_ENDPOINT=https://eu2.contabostorage.com
+CONTABO_S3_REGION=default
 CONTABO_S3_ACCESS_KEY_ID=
 CONTABO_S3_SECRET_ACCESS_KEY=
 CONTABO_S3_BUCKET_NAME=event-media
@@ -49,9 +49,20 @@ Contabo Object Storage S3 uyumludur. Türkiye'den erişim için Europe region ö
 3. S3 access key ve secret key oluşturun.
 4. Endpoint, region, bucket adı ve public base URL değerlerini env içine ekleyin.
 
+Contabo S3 API için Europe endpoint'i `https://eu2.contabostorage.com`, region değeri genelde `default` olmalıdır ve path-style bucket URL kullanılır.
+
 ## 5. Bucket ayarları
 
 Bu MVP'de medya URL'leri `CONTABO_S3_PUBLIC_BASE_URL` üzerinden servis edilir. Bu yüzden bucket veya ilgili object path'leri okunabilir olmalıdır. Upload yine public endpoint'e açık değildir; client önce kısa süreli signed upload URL alır, sonra dosyayı doğrudan Contabo'ya PUT eder.
+
+Tarayıcıdan direkt `PUT` yapılacağı için bucket CORS ayarını da uygulayın:
+
+```bash
+aws --endpoint-url https://eu2.contabostorage.com s3api put-bucket-cors --bucket event-media --cors-configuration file://cors.json
+aws --endpoint-url https://eu2.contabostorage.com s3api get-bucket-cors --bucket event-media
+```
+
+Production domaininiz `cors.json` içindeki `AllowedOrigins` listesinde birebir yer almalıdır. Örneğin `https://es.selwise.com` ile `https://www.es.selwise.com` farklı origin sayılır.
 
 Dosya yolu yapısı:
 

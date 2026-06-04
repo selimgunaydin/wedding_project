@@ -1,11 +1,17 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Camera, CheckCircle2, MessageCircle, Send, UploadCloud, User } from "lucide-react";
+import { AlertCircle, Camera, CheckCircle2, MessageCircle, Send, UploadCloud, User } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { UploadFileList } from "@/components/upload/UploadFileList";
 import type { UploadItemState } from "@/components/upload/UploadProgressItem";
-import { ACCEPTED_MIME_TYPES, MAX_FILES_PER_UPLOAD, MAX_IMAGE_SIZE_MB, MAX_VIDEO_SIZE_MB } from "@/lib/constants";
+import {
+  ACCEPTED_MIME_TYPES,
+  MAX_FILES_PER_UPLOAD,
+  MAX_IMAGE_SIZE_MB,
+  MAX_VIDEO_SIZE_MB,
+  UPLOAD_REQUEST_TIMEOUT_MS
+} from "@/lib/constants";
 import { validateFileByRules } from "@/lib/validators";
 import { cn } from "@/lib/utils";
 
@@ -21,13 +27,18 @@ type PresignResponse = {
   fileType: "image" | "video";
 };
 
+type UploadMessage = {
+  text: string;
+  tone: "success" | "warning" | "error";
+};
+
 export function UploadDropzone({ eventSlug }: UploadDropzoneProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [items, setItems] = useState<UploadItemState[]>([]);
   const [dragging, setDragging] = useState(false);
   const [guestName, setGuestName] = useState("");
   const [guestNote, setGuestNote] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<UploadMessage | null>(null);
 
   const readyToUpload = items.some((item) => item.status === "ready");
   const uploading = items.some((item) => item.status === "uploading");
@@ -52,7 +63,10 @@ export function UploadDropzone({ eventSlug }: UploadDropzoneProps) {
       });
 
       if (incoming.length > slots) {
-        setMessage(`Tek seferde en fazla ${MAX_FILES_PER_UPLOAD} dosya seçebilirsiniz.`);
+        setMessage({
+          text: `Tek seferde en fazla ${MAX_FILES_PER_UPLOAD} dosya seçebilirsiniz.`,
+          tone: "warning"
+        });
       }
 
       return [...current, ...next];
@@ -67,15 +81,20 @@ export function UploadDropzone({ eventSlug }: UploadDropzoneProps) {
     await new Promise<void>((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open("PUT", url);
+      xhr.timeout = UPLOAD_REQUEST_TIMEOUT_MS;
       xhr.setRequestHeader("Content-Type", file.type);
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) onProgress(Math.round((event.loaded / event.total) * 100));
       };
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) resolve();
-        else reject(new Error("Dosya Contabo Object Storage'a yüklenemedi."));
+        else reject(new Error(`Dosya Contabo Object Storage'a yüklenemedi. HTTP ${xhr.status || "0"}`));
       };
-      xhr.onerror = () => reject(new Error("Bağlantı sırasında hata oluştu."));
+      xhr.onerror = () =>
+        reject(new Error("Contabo Object Storage'a ulaşılamadı. CORS, tarayıcı güvenliği veya ağ engeli olabilir."));
+      xhr.ontimeout = () =>
+        reject(new Error("Contabo Object Storage zamanında yanıt vermedi. Endpoint erişimi ve bucket CORS ayarlarını kontrol edin."));
+      xhr.onabort = () => reject(new Error("Yükleme iptal edildi."));
       xhr.send(file);
     });
   }
@@ -126,11 +145,15 @@ export function UploadDropzone({ eventSlug }: UploadDropzoneProps) {
   async function startUpload() {
     setMessage(null);
     const queue = items.filter((item) => item.status === "ready");
+    let successCount = 0;
+    let errorCount = 0;
 
     for (const item of queue) {
       try {
         await uploadOne(item);
+        successCount += 1;
       } catch (error) {
+        errorCount += 1;
         updateItem(item.id, {
           status: "error",
           error: error instanceof Error ? error.message : "Beklenmeyen bir hata oluştu."
@@ -138,7 +161,22 @@ export function UploadDropzone({ eventSlug }: UploadDropzoneProps) {
       }
     }
 
-    setMessage("Anınız başarıyla gönderildi. Bizimle paylaştığınız için teşekkür ederiz.");
+    if (successCount > 0 && errorCount === 0) {
+      setMessage({
+        text: "Anınız başarıyla gönderildi. Bizimle paylaştığınız için teşekkür ederiz.",
+        tone: "success"
+      });
+    } else if (successCount > 0) {
+      setMessage({
+        text: `${successCount} dosya yüklendi, ${errorCount} dosya yüklenemedi. Detayları listede görebilirsiniz.`,
+        tone: "warning"
+      });
+    } else if (errorCount > 0) {
+      setMessage({
+        text: "Dosya yüklenemedi. Hata detayını dosya listesinde görebilirsiniz.",
+        tone: "error"
+      });
+    }
   }
 
   return (
@@ -223,9 +261,16 @@ export function UploadDropzone({ eventSlug }: UploadDropzoneProps) {
 
       <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {message ? (
-          <p className="flex items-center gap-2 text-sm text-emerald-700">
-            <CheckCircle2 className="h-4 w-4" />
-            {message}
+          <p
+            className={cn(
+              "flex items-center gap-2 text-sm",
+              message.tone === "success" && "text-emerald-700",
+              message.tone === "warning" && "text-amber-700",
+              message.tone === "error" && "text-red-700"
+            )}
+          >
+            {message.tone === "success" ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+            {message.text}
           </p>
         ) : (
           <p className="text-sm text-muted-foreground">Yükledikleriniz bize özel olarak iletilecek.</p>
