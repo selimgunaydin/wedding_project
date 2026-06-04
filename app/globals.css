@@ -71,6 +71,13 @@ select {
   background: linear-gradient(90deg, transparent, hsl(var(--copper) / 0.72), transparent);
 }
 
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
 .floral-frame {
   position: relative;
   min-height: 100vh;

@@ -21,6 +21,14 @@ function getAdminMediaUrl(upload: UploadRecord, download = false) {
   return `/api/admin/uploads/${upload.id}/file${download ? "?download=1" : ""}`;
 }
 
+function getGuestName(upload: UploadRecord) {
+  return upload.uploaded_by_name || "İsim belirtilmemiş";
+}
+
+function getGuestNote(upload: UploadRecord) {
+  return upload.uploaded_by_note || "Not eklenmemiş";
+}
+
 export function MediaGrid({ uploads, selectedIds, onSelect, onPreview, onApprove, onReject, onDelete }: MediaGridProps) {
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -47,6 +55,10 @@ export function MediaGrid({ uploads, selectedIds, onSelect, onPreview, onApprove
                 <p className="mt-1 text-xs text-muted-foreground">{formatBytes(upload.file_size)}</p>
               </div>
               <Badge tone={upload.status}>{upload.status}</Badge>
+            </div>
+            <div className="mt-3 rounded-lg border border-border/70 bg-white/55 p-3 text-sm">
+              <p className="truncate font-medium">{getGuestName(upload)}</p>
+              <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{getGuestNote(upload)}</p>
             </div>
             <div className="mt-4 flex flex-wrap gap-1">
               <Button size="icon" variant="ghost" onClick={() => onPreview(upload)} aria-label="Önizle">

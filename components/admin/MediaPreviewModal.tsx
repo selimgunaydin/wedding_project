@@ -14,6 +14,10 @@ function getAdminMediaUrl(upload: UploadRecord) {
   return `/api/admin/uploads/${upload.id}/file`;
 }
 
+function getGuestName(upload: UploadRecord) {
+  return upload.uploaded_by_name || "İsim belirtilmemiş";
+}
+
 export function MediaPreviewModal({ upload, onClose }: MediaPreviewModalProps) {
   if (!upload) return null;
 
@@ -23,7 +27,7 @@ export function MediaPreviewModal({ upload, onClose }: MediaPreviewModalProps) {
         <div className="flex items-center justify-between border-b border-border p-3">
           <div className="min-w-0">
             <p className="truncate text-sm font-medium">{upload.original_file_name}</p>
-            <p className="text-xs text-muted-foreground">{upload.uploaded_by_name || "İsim belirtilmemiş"}</p>
+            <p className="text-xs text-muted-foreground">{getGuestName(upload)}</p>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose} aria-label="Kapat">
             <X className="h-5 w-5" />
@@ -36,6 +40,12 @@ export function MediaPreviewModal({ upload, onClose }: MediaPreviewModalProps) {
             <video src={getAdminMediaUrl(upload)} controls preload="metadata" className="max-h-[70vh] w-full rounded-lg" />
           )}
         </div>
+        {upload.uploaded_by_note ? (
+          <div className="border-t border-border bg-white/70 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Misafir notu</p>
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-6">{upload.uploaded_by_note}</p>
+          </div>
+        ) : null}
       </div>
     </div>
   );
