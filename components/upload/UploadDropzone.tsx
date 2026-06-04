@@ -9,22 +9,13 @@ import {
   ACCEPTED_MIME_TYPES,
   MAX_FILES_PER_UPLOAD,
   MAX_IMAGE_SIZE_MB,
-  MAX_VIDEO_SIZE_MB,
-  UPLOAD_REQUEST_TIMEOUT_MS
+  MAX_VIDEO_SIZE_MB
 } from "@/lib/constants";
 import { validateFileByRules } from "@/lib/validators";
 import { cn } from "@/lib/utils";
 
 type UploadDropzoneProps = {
   eventSlug: string;
-};
-
-type PresignResponse = {
-  uploadUrl: string;
-  filePath: string;
-  fileUrl: string;
-  fileName: string;
-  fileType: "image" | "video";
 };
 
 type UploadMessage = {
@@ -77,67 +68,46 @@ export function UploadDropzone({ eventSlug }: UploadDropzoneProps) {
     setItems((current) => current.map((item) => (item.id === id ? { ...item, ...patch } : item)));
   }
 
-  async function uploadWithProgress(url: string, file: File, onProgress: (progress: number) => void) {
+  async function uploadWithProgress(item: UploadItemState, onProgress: (progress: number) => void) {
     await new Promise<void>((resolve, reject) => {
       const xhr = new XMLHttpRequest();
-      xhr.open("PUT", url);
-      xhr.timeout = UPLOAD_REQUEST_TIMEOUT_MS;
-      xhr.setRequestHeader("Content-Type", file.type);
+
+      const params = new URLSearchParams({ eventSlug });
+      xhr.open("POST", `/api/upload?${params.toString()}`);
+      xhr.setRequestHeader("Content-Type", item.file.type);
+      xhr.setRequestHeader("X-Upload-File-Name", encodeURIComponent(item.file.name));
+      xhr.setRequestHeader("X-Upload-File-Size", String(item.file.size));
+      xhr.setRequestHeader("X-Uploaded-By-Name", encodeURIComponent(guestName));
+      xhr.setRequestHeader("X-Uploaded-By-Note", encodeURIComponent(guestNote));
+
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) onProgress(Math.round((event.loaded / event.total) * 100));
       };
       xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) resolve();
-        else reject(new Error(`Dosya Contabo Object Storage'a yüklenemedi. HTTP ${xhr.status || "0"}`));
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve();
+          return;
+        }
+
+        let errorMessage = `Dosya yüklenemedi. HTTP ${xhr.status || "0"}`;
+        try {
+          const response = JSON.parse(xhr.responseText || "null") as { error?: string } | null;
+          errorMessage = response?.error || errorMessage;
+        } catch {
+          // Non-JSON responses usually come from nginx/proxy errors such as 413 or 504.
+        }
+        reject(new Error(errorMessage));
       };
-      xhr.onerror = () =>
-        reject(new Error("Contabo Object Storage'a ulaşılamadı. CORS, tarayıcı güvenliği veya ağ engeli olabilir."));
-      xhr.ontimeout = () =>
-        reject(new Error("Contabo Object Storage zamanında yanıt vermedi. Endpoint erişimi ve bucket CORS ayarlarını kontrol edin."));
+      xhr.onerror = () => reject(new Error("Sunucuya yükleme sırasında bağlantı hatası oluştu."));
       xhr.onabort = () => reject(new Error("Yükleme iptal edildi."));
-      xhr.send(file);
+      xhr.send(item.file);
     });
   }
 
   async function uploadOne(item: UploadItemState) {
     updateItem(item.id, { status: "uploading", progress: 4, error: undefined });
 
-    const presignResponse = await fetch("/api/upload/presign", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        eventSlug,
-        fileName: item.file.name,
-        mimeType: item.file.type,
-        fileSize: item.file.size
-      })
-    });
-
-    const presignJson = await presignResponse.json();
-    if (!presignResponse.ok) throw new Error(presignJson.error || "Upload bağlantısı alınamadı.");
-    const presign = presignJson as PresignResponse;
-
-    await uploadWithProgress(presign.uploadUrl, item.file, (progress) => updateItem(item.id, { progress }));
-
-    const completeResponse = await fetch("/api/upload/complete", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        eventSlug,
-        fileName: presign.fileName,
-        originalFileName: item.file.name,
-        filePath: presign.filePath,
-        fileUrl: presign.fileUrl,
-        fileType: presign.fileType,
-        mimeType: item.file.type,
-        fileSize: item.file.size,
-        uploadedByName: guestName,
-        uploadedByNote: guestNote
-      })
-    });
-
-    const completeJson = await completeResponse.json();
-    if (!completeResponse.ok) throw new Error(completeJson.error || "Yükleme kaydı oluşturulamadı.");
+    await uploadWithProgress(item, (progress) => updateItem(item.id, { progress }));
 
     updateItem(item.id, { status: "success", progress: 100 });
   }

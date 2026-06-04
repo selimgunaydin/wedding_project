@@ -53,9 +53,9 @@ Contabo S3 API için Europe endpoint'i `https://eu2.contabostorage.com`, region 
 
 ## 5. Bucket ayarları
 
-Bu MVP'de medya URL'leri `CONTABO_S3_PUBLIC_BASE_URL` üzerinden servis edilir. Bu yüzden bucket veya ilgili object path'leri okunabilir olmalıdır. Upload yine public endpoint'e açık değildir; client önce kısa süreli signed upload URL alır, sonra dosyayı doğrudan Contabo'ya PUT eder.
+Bu MVP'de medya URL'leri `CONTABO_S3_PUBLIC_BASE_URL` üzerinden servis edilir. Bu yüzden bucket veya ilgili object path'leri okunabilir olmalıdır. Upload public endpoint'e açık değildir; client dosyayı kendi `/api/upload` endpoint'imize gönderir, server da Contabo Object Storage'a multipart upload yapar.
 
-Tarayıcıdan direkt `PUT` yapılacağı için bucket CORS ayarını da uygulayın:
+Tarayıcı artık Contabo'ya direkt `PUT` yapmadığı için upload tarafında bucket CORS'a bağımlı değildir. İleride admin preview/download gibi cross-origin ihtiyaçlar için CORS ayarı gerekirse:
 
 ```bash
 aws --endpoint-url https://eu2.contabostorage.com s3api put-bucket-cors --bucket event-media --cors-configuration file://cors.json
@@ -145,13 +145,12 @@ Limitler `lib/constants.ts` içinde tutulur:
 - Video: 300 MB
 - Tek seferde: 10 dosya
 
-Büyük video dosyaları Next.js server üzerinden akmaz. Akış:
+Upload akışı:
 
-1. Client dosya bilgisini `/api/upload/presign` endpoint'ine gönderir.
+1. Client dosyayı raw request body olarak `/api/upload` endpoint'ine gönderir.
 2. Server etkinlik, mime type ve boyut kontrolü yapar.
-3. Server Contabo için kısa süreli signed URL üretir.
-4. Client dosyayı doğrudan Contabo Object Storage'a PUT eder.
-5. Client `/api/upload/complete` ile metadata kaydını oluşturur.
-6. Kayıt `pending` olur; medya yalnızca admin panelinde yönetilir.
+3. Server dosyayı 8 MB parçalarla Contabo Object Storage'a multipart upload eder.
+4. Server metadata kaydını oluşturur.
+5. Kayıt `pending` olur; medya yalnızca admin panelinde yönetilir.
 
 Contabo tarafında kullanım büyürse lifecycle policy, CDN cache ve video thumbnail üretimi eklemek iyi bir sonraki adımdır.

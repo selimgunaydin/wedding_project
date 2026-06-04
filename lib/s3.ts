@@ -1,16 +1,22 @@
 import {
+  AbortMultipartUploadCommand,
+  CompleteMultipartUploadCommand,
+  CreateMultipartUploadCommand,
   DeleteObjectCommand,
-  PutObjectCommand,
   S3Client,
+  UploadPartCommand,
+  type CompletedPart,
 } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { PRESIGNED_URL_EXPIRES_IN_SECONDS } from "@/lib/constants";
+import type { Readable } from "node:stream";
 import { buildStoragePath, getFileTypeFromMime } from "@/lib/upload";
 
-type PresignInput = {
+const MULTIPART_CHUNK_SIZE = 8 * 1024 * 1024;
+
+type UploadObjectInput = {
   eventSlug: string;
   fileName: string;
   mimeType: string;
+  body: Readable;
 };
 
 export function isS3Configured() {
@@ -49,7 +55,7 @@ export function getPublicFileUrl(filePath: string) {
   return `${process.env.CONTABO_S3_PUBLIC_BASE_URL.replace(/\/$/, "")}/${filePath}`;
 }
 
-export async function createPresignedUploadUrl(input: PresignInput) {
+export async function uploadObject(input: UploadObjectInput) {
   const fileType = getFileTypeFromMime(input.mimeType);
   if (!fileType) throw new Error("Desteklenmeyen dosya türü.");
 
@@ -58,23 +64,81 @@ export async function createPresignedUploadUrl(input: PresignInput) {
     input.fileName,
     input.mimeType,
   );
-  const command = new PutObjectCommand({
+  const client = getS3Client();
+  const createResult = await client.send(new CreateMultipartUploadCommand({
     Bucket: process.env.CONTABO_S3_BUCKET_NAME,
     Key: filePath,
     ContentType: input.mimeType,
-  });
+  }));
 
-  const uploadUrl = await getSignedUrl(getS3Client(), command, {
-    expiresIn: PRESIGNED_URL_EXPIRES_IN_SECONDS,
-  });
+  if (!createResult.UploadId) {
+    throw new Error("Contabo multipart upload başlatılamadı.");
+  }
+
+  const parts: CompletedPart[] = [];
+  let partNumber = 1;
+  let pending = Buffer.alloc(0);
+  let uploadedBytes = 0;
+
+  try {
+    async function uploadPart(body: Buffer) {
+      const result = await client.send(new UploadPartCommand({
+        Bucket: process.env.CONTABO_S3_BUCKET_NAME,
+        Key: filePath,
+        UploadId: createResult.UploadId,
+        PartNumber: partNumber,
+        Body: body,
+        ContentLength: body.length,
+      }));
+
+      if (!result.ETag) {
+        throw new Error("Contabo upload parçası ETag döndürmedi.");
+      }
+
+      parts.push({ ETag: result.ETag, PartNumber: partNumber });
+      partNumber += 1;
+    }
+
+    for await (const chunk of input.body) {
+      const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+      uploadedBytes += buffer.length;
+      pending = Buffer.concat([pending, buffer]);
+
+      while (pending.length >= MULTIPART_CHUNK_SIZE) {
+        const part = pending.subarray(0, MULTIPART_CHUNK_SIZE);
+        pending = pending.subarray(MULTIPART_CHUNK_SIZE);
+        await uploadPart(part);
+      }
+    }
+
+    if (pending.length > 0 || parts.length === 0) {
+      await uploadPart(pending);
+    }
+
+    await client.send(new CompleteMultipartUploadCommand({
+      Bucket: process.env.CONTABO_S3_BUCKET_NAME,
+      Key: filePath,
+      UploadId: createResult.UploadId,
+      MultipartUpload: { Parts: parts },
+    }));
+  } catch (error) {
+    await client.send(new AbortMultipartUploadCommand({
+      Bucket: process.env.CONTABO_S3_BUCKET_NAME,
+      Key: filePath,
+      UploadId: createResult.UploadId,
+    })).catch((abortError) => {
+      console.error("multipart upload cleanup failed", abortError);
+    });
+
+    throw error;
+  }
 
   return {
-    uploadUrl,
     filePath,
     fileUrl: getPublicFileUrl(filePath),
     fileName: filePath.split("/").at(-1)!,
     fileType,
-    expiresIn: PRESIGNED_URL_EXPIRES_IN_SECONDS,
+    uploadedBytes,
   };
 }
 
