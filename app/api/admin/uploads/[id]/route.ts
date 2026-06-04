@@ -21,6 +21,10 @@ export async function DELETE(request: NextRequest, context: Context) {
     return NextResponse.json({ error: "Medya bulunamadı." }, { status: 404 });
   }
 
+  if (upload.status === "rejected") {
+    return NextResponse.json({ error: "Reddedilen medya silinmez; arşivde kalmalıdır." }, { status: 400 });
+  }
+
   try {
     await deleteObject(upload.file_path);
     await deleteUploadRecord(id);

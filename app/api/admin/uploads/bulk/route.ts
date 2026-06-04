@@ -24,6 +24,10 @@ export async function POST(request: NextRequest) {
   try {
     if (parsed.data.action === "delete") {
       const uploads = (await Promise.all(parsed.data.ids.map((id) => getUploadById(id)))).filter(Boolean);
+      if (uploads.some((upload) => upload!.status === "rejected")) {
+        return NextResponse.json({ error: "Reddedilen medya silinmez; arşivde kalmalıdır." }, { status: 400 });
+      }
+
       await Promise.all(uploads.map((upload) => deleteObject(upload!.file_path)));
       await bulkDeleteUploadRecords(parsed.data.ids);
       return NextResponse.json({ ok: true });

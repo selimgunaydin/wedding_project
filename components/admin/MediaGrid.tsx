@@ -17,6 +17,10 @@ type MediaGridProps = {
   onDelete: (id: string) => void;
 };
 
+function getAdminMediaUrl(upload: UploadRecord, download = false) {
+  return `/api/admin/uploads/${upload.id}/file${download ? "?download=1" : ""}`;
+}
+
 export function MediaGrid({ uploads, selectedIds, onSelect, onPreview, onApprove, onReject, onDelete }: MediaGridProps) {
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -24,9 +28,9 @@ export function MediaGrid({ uploads, selectedIds, onSelect, onPreview, onApprove
         <article key={upload.id} className="overflow-hidden rounded-xl border border-border bg-white/70 shadow-line">
           <div className="relative aspect-[4/3] bg-muted">
             {upload.file_type === "image" ? (
-              <img src={upload.file_url} alt={upload.original_file_name} className="h-full w-full object-cover" />
+              <img src={getAdminMediaUrl(upload)} alt={upload.original_file_name} className="h-full w-full object-cover" />
             ) : (
-              <video src={upload.file_url} preload="metadata" className="h-full w-full object-cover" />
+              <video src={getAdminMediaUrl(upload)} preload="metadata" className="h-full w-full object-cover" />
             )}
             <label className="absolute left-3 top-3 rounded-lg bg-white/85 p-2">
               <input
@@ -48,7 +52,7 @@ export function MediaGrid({ uploads, selectedIds, onSelect, onPreview, onApprove
               <Button size="icon" variant="ghost" onClick={() => onPreview(upload)} aria-label="Önizle">
                 <Eye className="h-4 w-4" />
               </Button>
-              <a href={upload.file_url} download className="inline-flex h-10 w-10 items-center justify-center rounded-lg hover:bg-muted">
+              <a href={getAdminMediaUrl(upload, true)} download className="inline-flex h-10 w-10 items-center justify-center rounded-lg hover:bg-muted">
                 <Download className="h-4 w-4" />
               </a>
               <Button size="icon" variant="ghost" onClick={() => onApprove(upload.id)} aria-label="Onayla">
@@ -57,9 +61,11 @@ export function MediaGrid({ uploads, selectedIds, onSelect, onPreview, onApprove
               <Button size="icon" variant="ghost" onClick={() => onReject(upload.id)} aria-label="Reddet">
                 <X className="h-4 w-4" />
               </Button>
-              <Button size="icon" variant="ghost" onClick={() => onDelete(upload.id)} aria-label="Sil">
-                <Trash2 className="h-4 w-4 text-red-600" />
-              </Button>
+              {upload.status !== "rejected" ? (
+                <Button size="icon" variant="ghost" onClick={() => onDelete(upload.id)} aria-label="Sil">
+                  <Trash2 className="h-4 w-4 text-red-600" />
+                </Button>
+              ) : null}
             </div>
           </div>
         </article>

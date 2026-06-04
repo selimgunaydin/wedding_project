@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, Grid2X2, List, Trash2 } from "lucide-react";
+import { Check, Download, Grid2X2, List, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -35,9 +35,21 @@ export function MediaManager({ uploads, eventSlug }: MediaManagerProps) {
       }),
     [eventSlug, fileType, localUploads, status]
   );
+  const selectedUploads = useMemo(
+    () => localUploads.filter((upload) => selectedIds.includes(upload.id)),
+    [localUploads, selectedIds]
+  );
+  const selectedHasRejected = selectedUploads.some((upload) => upload.status === "rejected");
 
   function select(id: string, checked: boolean) {
     setSelectedIds((current) => (checked ? [...new Set([...current, id])] : current.filter((item) => item !== id)));
+  }
+
+  function bulkDownload() {
+    if (selectedIds.length === 0) return;
+
+    const params = new URLSearchParams({ ids: selectedIds.join(",") });
+    window.location.href = `/api/admin/uploads/bulk/download?${params.toString()}`;
   }
 
   async function updateStatus(id: string, nextStatus: UploadStatus) {
@@ -135,7 +147,16 @@ export function MediaManager({ uploads, eventSlug }: MediaManagerProps) {
             <Check className="h-4 w-4" />
             Toplu onay
           </Button>
-          <Button variant="danger" size="sm" onClick={() => setDeleteTarget("bulk")} disabled={selectedIds.length === 0 || busy}>
+          <Button variant="outline" size="sm" onClick={bulkDownload} disabled={selectedIds.length === 0 || busy}>
+            <Download className="h-4 w-4" />
+            Toplu indir
+          </Button>
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={() => setDeleteTarget("bulk")}
+            disabled={selectedIds.length === 0 || selectedHasRejected || busy}
+          >
             <Trash2 className="h-4 w-4" />
             Toplu sil
           </Button>

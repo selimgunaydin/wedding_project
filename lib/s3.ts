@@ -3,6 +3,7 @@ import {
   CompleteMultipartUploadCommand,
   CreateMultipartUploadCommand,
   DeleteObjectCommand,
+  GetObjectCommand,
   S3Client,
   UploadPartCommand,
   type CompletedPart,
@@ -17,6 +18,11 @@ type UploadObjectInput = {
   fileName: string;
   mimeType: string;
   body: Readable;
+};
+
+type GetObjectInput = {
+  filePath: string;
+  range?: string | null;
 };
 
 export function isS3Configured() {
@@ -149,4 +155,14 @@ export async function deleteObject(filePath: string) {
   });
 
   await getS3Client().send(command);
+}
+
+export async function getObject(input: GetObjectInput) {
+  const command = new GetObjectCommand({
+    Bucket: process.env.CONTABO_S3_BUCKET_NAME,
+    Key: input.filePath,
+    Range: input.range || undefined,
+  });
+
+  return getS3Client().send(command);
 }

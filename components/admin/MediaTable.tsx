@@ -22,6 +22,10 @@ const statusLabels = {
   rejected: "Reddedildi"
 };
 
+function getAdminMediaUrl(upload: UploadRecord, download = false) {
+  return `/api/admin/uploads/${upload.id}/file${download ? "?download=1" : ""}`;
+}
+
 export function MediaTable({ uploads, selectedIds, onSelect, onPreview, onApprove, onReject, onDelete }: MediaTableProps) {
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-white/70">
@@ -65,7 +69,7 @@ export function MediaTable({ uploads, selectedIds, onSelect, onPreview, onApprov
                       <Eye className="h-4 w-4" />
                     </Button>
                     <a
-                      href={upload.file_url}
+                      href={getAdminMediaUrl(upload, true)}
                       download
                       className="inline-flex h-10 w-10 items-center justify-center rounded-lg hover:bg-muted"
                       aria-label="İndir"
@@ -78,9 +82,11 @@ export function MediaTable({ uploads, selectedIds, onSelect, onPreview, onApprov
                     <Button size="icon" variant="ghost" onClick={() => onReject(upload.id)} aria-label="Reddet">
                       <X className="h-4 w-4" />
                     </Button>
-                    <Button size="icon" variant="ghost" onClick={() => onDelete(upload.id)} aria-label="Sil">
-                      <Trash2 className="h-4 w-4 text-red-600" />
-                    </Button>
+                    {upload.status !== "rejected" ? (
+                      <Button size="icon" variant="ghost" onClick={() => onDelete(upload.id)} aria-label="Sil">
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                      </Button>
+                    ) : null}
                   </div>
                 </td>
               </tr>

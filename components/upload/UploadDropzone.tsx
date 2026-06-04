@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { AlertCircle, Camera, CheckCircle2, MessageCircle, Send, UploadCloud, User } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { AlertCircle, Camera, CheckCircle2, MessageCircle, UploadCloud, User } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { UploadFileList } from "@/components/upload/UploadFileList";
 import type { UploadItemState } from "@/components/upload/UploadProgressItem";
@@ -149,6 +149,13 @@ export function UploadDropzone({ eventSlug }: UploadDropzoneProps) {
     }
   }
 
+  useEffect(() => {
+    if (!readyToUpload || uploading) return;
+    void startUpload();
+    // startUpload uses the latest render state and moves ready items to uploading immediately.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readyToUpload, uploading]);
+
   return (
     <div className="paper-surface rounded-[18px] border border-white/70 p-3 md:p-4">
       <div
@@ -243,12 +250,10 @@ export function UploadDropzone({ eventSlug }: UploadDropzoneProps) {
             {message.text}
           </p>
         ) : (
-          <p className="text-sm text-muted-foreground">Yükledikleriniz bize özel olarak iletilecek.</p>
+          <p className="text-sm text-muted-foreground">
+            {uploading ? "Yükleme otomatik olarak devam ediyor." : "Dosya seçildiğinde yükleme otomatik başlar."}
+          </p>
         )}
-        <Button onClick={startUpload} disabled={!readyToUpload || uploading} className="w-full sm:w-auto">
-          <Send className="h-4 w-4" />
-          {uploading ? "Yükleniyor" : "Yüklemeyi Başlat"}
-        </Button>
       </div>
     </div>
   );
