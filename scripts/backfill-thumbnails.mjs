@@ -12,6 +12,7 @@ import { readFileSync } from "node:fs";
 import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { createClient } from "@supabase/supabase-js";
 import sharp from "sharp";
+import ws from "ws";
 
 const THUMBNAIL_MAX_EDGE = 480;
 const CONCURRENCY = 4;
@@ -62,6 +63,7 @@ if (!CONTABO_S3_BUCKET_NAME || !CONTABO_S3_PUBLIC_BASE_URL) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
+  realtime: { transport: ws },
 });
 
 const s3 = new S3Client({
