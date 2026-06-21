@@ -36,20 +36,8 @@ function encodeContentDispositionFileName(fileName: string) {
   return `filename="${fileName}"; filename*=UTF-8''${encodeURIComponent(fileName)}`;
 }
 
-export async function GET(request: NextRequest) {
-  if (!verifyAdminSession(request.cookies.get(getAdminCookieName())?.value)) {
-    return NextResponse.json({ error: "Yetkisiz işlem." }, { status: 401 });
-  }
-
-  const parsed = querySchema.safeParse({
-    ids: request.nextUrl.searchParams.get("ids")
-  });
-
-  if (!parsed.success) {
-    return NextResponse.json({ error: "İndirilecek medya seçilmedi." }, { status: 400 });
-  }
-
-  const uploads = (await Promise.all(parsed.data.ids.map((id) => getUploadById(id)))).filter(Boolean);
+async function buildZipResponse(ids: string[]) {
+  const uploads = (await Promise.all(ids.map((id) => getUploadById(id)))).filter(Boolean);
 
   if (uploads.length === 0) {
     return NextResponse.json({ error: "Medya bulunamadı." }, { status: 404 });
@@ -78,4 +66,37 @@ export async function GET(request: NextRequest) {
   return new Response(Readable.toWeb(Readable.from(createZipStream(zipEntries))) as ReadableStream, {
     headers,
   });
+}
+
+export async function GET(request: NextRequest) {
+  if (!verifyAdminSession(request.cookies.get(getAdminCookieName())?.value)) {
+    return NextResponse.json({ error: "Yetkisiz işlem." }, { status: 401 });
+  }
+
+  const parsed = querySchema.safeParse({
+    ids: request.nextUrl.searchParams.get("ids")
+  });
+
+  if (!parsed.success) {
+    return NextResponse.json({ error: "İndirilecek medya seçilmedi." }, { status: 400 });
+  }
+
+  return buildZipResponse(parsed.data.ids);
+}
+
+// "Tümünü indir" yüzlerce dosyada URL uzunluğu sınırına takılmasın diye POST
+// ile id listesi form alanında (ids=virgülle ayrılmış) gönderilir.
+export async function POST(request: NextRequest) {
+  if (!verifyAdminSession(request.cookies.get(getAdminCookieName())?.value)) {
+    return NextResponse.json({ error: "Yetkisiz işlem." }, { status: 401 });
+  }
+
+  const formData = await request.formData();
+  const parsed = querySchema.safeParse({ ids: formData.get("ids") });
+
+  if (!parsed.success) {
+    return NextResponse.json({ error: "İndirilecek medya seçilmedi." }, { status: 400 });
+  }
+
+  return buildZipResponse(parsed.data.ids);
 }

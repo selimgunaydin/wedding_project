@@ -12,6 +12,30 @@ import type { Readable } from "node:stream";
 import { buildStoragePath, getFileTypeFromMime } from "@/lib/upload";
 
 const MULTIPART_CHUNK_SIZE = 8 * 1024 * 1024;
+const MAX_RETRIES = 3;
+const RETRY_BASE_DELAY_MS = 400;
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function withRetry<T>(label: string, action: () => Promise<T>) {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
+    try {
+      return await action();
+    } catch (error) {
+      lastError = error;
+      if (attempt === MAX_RETRIES) break;
+      const backoff = RETRY_BASE_DELAY_MS * 2 ** (attempt - 1);
+      console.warn(`${label} başarısız (deneme ${attempt}/${MAX_RETRIES}), tekrar deneniyor`, error);
+      await delay(backoff);
+    }
+  }
+
+  throw lastError;
+}
 
 type UploadObjectInput = {
   eventSlug: string;
@@ -71,11 +95,13 @@ export async function uploadObject(input: UploadObjectInput) {
     input.mimeType,
   );
   const client = getS3Client();
-  const createResult = await client.send(new CreateMultipartUploadCommand({
-    Bucket: process.env.CONTABO_S3_BUCKET_NAME,
-    Key: filePath,
-    ContentType: input.mimeType,
-  }));
+  const createResult = await withRetry("multipart başlatma", () =>
+    client.send(new CreateMultipartUploadCommand({
+      Bucket: process.env.CONTABO_S3_BUCKET_NAME,
+      Key: filePath,
+      ContentType: input.mimeType,
+    })),
+  );
 
   if (!createResult.UploadId) {
     throw new Error("Contabo multipart upload başlatılamadı.");
@@ -83,50 +109,66 @@ export async function uploadObject(input: UploadObjectInput) {
 
   const parts: CompletedPart[] = [];
   let partNumber = 1;
-  let pending = Buffer.alloc(0);
+  // Parçaları diziye biriktiriyoruz; her chunk'ta Buffer.concat çağırmak
+  // büyük dosyalarda O(n²) bellek kopyasına yol açtığı için yalnızca eşik
+  // dolunca tek seferde birleştiriyoruz.
+  let pendingChunks: Buffer[] = [];
+  let pendingLength = 0;
   let uploadedBytes = 0;
 
   try {
     async function uploadPart(body: Buffer) {
-      const result = await client.send(new UploadPartCommand({
-        Bucket: process.env.CONTABO_S3_BUCKET_NAME,
-        Key: filePath,
-        UploadId: createResult.UploadId,
-        PartNumber: partNumber,
-        Body: body,
-        ContentLength: body.length,
-      }));
+      const currentPart = partNumber;
+      const result = await withRetry(`parça ${currentPart} yükleme`, () =>
+        client.send(new UploadPartCommand({
+          Bucket: process.env.CONTABO_S3_BUCKET_NAME,
+          Key: filePath,
+          UploadId: createResult.UploadId,
+          PartNumber: currentPart,
+          Body: body,
+          ContentLength: body.length,
+        })),
+      );
 
       if (!result.ETag) {
         throw new Error("Contabo upload parçası ETag döndürmedi.");
       }
 
-      parts.push({ ETag: result.ETag, PartNumber: partNumber });
+      parts.push({ ETag: result.ETag, PartNumber: currentPart });
       partNumber += 1;
     }
 
     for await (const chunk of input.body) {
       const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
       uploadedBytes += buffer.length;
-      pending = Buffer.concat([pending, buffer]);
+      pendingChunks.push(buffer);
+      pendingLength += buffer.length;
 
-      while (pending.length >= MULTIPART_CHUNK_SIZE) {
-        const part = pending.subarray(0, MULTIPART_CHUNK_SIZE);
-        pending = pending.subarray(MULTIPART_CHUNK_SIZE);
-        await uploadPart(part);
+      if (pendingLength >= MULTIPART_CHUNK_SIZE) {
+        const merged = Buffer.concat(pendingChunks, pendingLength);
+        let offset = 0;
+        while (merged.length - offset >= MULTIPART_CHUNK_SIZE) {
+          await uploadPart(merged.subarray(offset, offset + MULTIPART_CHUNK_SIZE));
+          offset += MULTIPART_CHUNK_SIZE;
+        }
+        const remainder = merged.subarray(offset);
+        pendingChunks = remainder.length > 0 ? [remainder] : [];
+        pendingLength = remainder.length;
       }
     }
 
-    if (pending.length > 0 || parts.length === 0) {
-      await uploadPart(pending);
+    if (pendingLength > 0 || parts.length === 0) {
+      await uploadPart(Buffer.concat(pendingChunks, pendingLength));
     }
 
-    await client.send(new CompleteMultipartUploadCommand({
-      Bucket: process.env.CONTABO_S3_BUCKET_NAME,
-      Key: filePath,
-      UploadId: createResult.UploadId,
-      MultipartUpload: { Parts: parts },
-    }));
+    await withRetry("multipart tamamlama", () =>
+      client.send(new CompleteMultipartUploadCommand({
+        Bucket: process.env.CONTABO_S3_BUCKET_NAME,
+        Key: filePath,
+        UploadId: createResult.UploadId,
+        MultipartUpload: { Parts: parts },
+      })),
+    );
   } catch (error) {
     await client.send(new AbortMultipartUploadCommand({
       Bucket: process.env.CONTABO_S3_BUCKET_NAME,

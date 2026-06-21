@@ -54,8 +54,8 @@ export function UploadDropzone({ eventSlug }: UploadDropzoneProps) {
     setItems((current) => current.map((item) => (item.id === id ? { ...item, ...patch } : item)));
   }
 
-  async function uploadWithProgress(item: UploadItemState, onProgress: (progress: number) => void) {
-    await new Promise<void>((resolve, reject) => {
+  function sendUpload(item: UploadItemState, onProgress: (progress: number) => void) {
+    return new Promise<void>((resolve, reject) => {
       const xhr = new XMLHttpRequest();
 
       const params = new URLSearchParams({ eventSlug });
@@ -82,12 +82,39 @@ export function UploadDropzone({ eventSlug }: UploadDropzoneProps) {
         } catch {
           // Non-JSON responses usually come from nginx/proxy errors such as 413 or 504.
         }
-        reject(new Error(errorMessage));
+        const error = new Error(errorMessage) as Error & { status?: number };
+        error.status = xhr.status;
+        reject(error);
       };
       xhr.onerror = () => reject(new Error("Sunucuya yükleme sırasında bağlantı hatası oluştu."));
       xhr.onabort = () => reject(new Error("Yükleme iptal edildi."));
       xhr.send(item.file);
     });
+  }
+
+  // Yalnızca geçici hatalarda tekrar dener. 4xx (413 boyut, 400 doğrulama vb.)
+  // tekrar denemekle düzelmez, bunlarda kullanıcıya hemen hata gösteririz.
+  function isRetriableStatus(status?: number) {
+    if (status === undefined) return true; // ağ hatası
+    if (status === 0) return true; // bağlantı kesildi
+    if (status === 429) return true;
+    return status >= 500;
+  }
+
+  async function uploadWithProgress(item: UploadItemState, onProgress: (progress: number) => void) {
+    const maxAttempts = 3;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        await sendUpload(item, onProgress);
+        return;
+      } catch (error) {
+        const status = (error as { status?: number }).status;
+        if (attempt === maxAttempts || !isRetriableStatus(status)) throw error;
+        onProgress(0);
+        await new Promise((resolve) => setTimeout(resolve, 600 * attempt));
+      }
+    }
   }
 
   async function uploadOne(item: UploadItemState) {

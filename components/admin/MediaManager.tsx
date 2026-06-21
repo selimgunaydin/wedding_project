@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, Download, Grid2X2, List, Trash2 } from "lucide-react";
+import { Check, CheckCheck, Download, DownloadCloud, Grid2X2, List, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -40,16 +40,61 @@ export function MediaManager({ uploads, eventSlug }: MediaManagerProps) {
     [localUploads, selectedIds]
   );
   const selectedHasRejected = selectedUploads.some((upload) => upload.status === "rejected");
+  const approvableCount = filteredUploads.filter((upload) => upload.status !== "approved").length;
 
   function select(id: string, checked: boolean) {
     setSelectedIds((current) => (checked ? [...new Set([...current, id])] : current.filter((item) => item !== id)));
   }
 
-  function bulkDownload() {
-    if (selectedIds.length === 0) return;
+  // İndirmeyi POST formuyla tetikliyoruz; çok sayıda dosyada URL uzunluğu
+  // sınırına takılmadan tüm id listesini gövdede gönderebiliyoruz.
+  function downloadByIds(ids: string[]) {
+    if (ids.length === 0) return;
 
-    const params = new URLSearchParams({ ids: selectedIds.join(",") });
-    window.location.href = `/api/admin/uploads/bulk/download?${params.toString()}`;
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "/api/admin/uploads/bulk/download";
+    form.style.display = "none";
+
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = "ids";
+    input.value = ids.join(",");
+    form.appendChild(input);
+
+    document.body.appendChild(form);
+    form.submit();
+    form.remove();
+  }
+
+  function bulkDownload() {
+    downloadByIds(selectedIds);
+  }
+
+  function downloadAll() {
+    downloadByIds(filteredUploads.map((upload) => upload.id));
+  }
+
+  async function approveAll() {
+    const ids = filteredUploads.filter((upload) => upload.status !== "approved").map((upload) => upload.id);
+    if (ids.length === 0) return;
+
+    setBusy(true);
+    try {
+      const response = await fetch("/api/admin/uploads/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids, action: "approve" })
+      });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error || "Toplu onay tamamlanamadı.");
+      setLocalUploads((current) =>
+        current.map((upload) => json.uploads.find((item: UploadRecord) => item.id === upload.id) ?? upload)
+      );
+      setSelectedIds([]);
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function updateStatus(id: string, nextStatus: UploadStatus) {
@@ -150,6 +195,14 @@ export function MediaManager({ uploads, eventSlug }: MediaManagerProps) {
           <Button variant="outline" size="sm" onClick={bulkDownload} disabled={selectedIds.length === 0 || busy}>
             <Download className="h-4 w-4" />
             Toplu indir
+          </Button>
+          <Button variant="secondary" size="sm" onClick={approveAll} disabled={approvableCount === 0 || busy}>
+            <CheckCheck className="h-4 w-4" />
+            Tümünü onayla{approvableCount > 0 ? ` (${approvableCount})` : ""}
+          </Button>
+          <Button variant="outline" size="sm" onClick={downloadAll} disabled={filteredUploads.length === 0 || busy}>
+            <DownloadCloud className="h-4 w-4" />
+            Tümünü indir{filteredUploads.length > 0 ? ` (${filteredUploads.length})` : ""}
           </Button>
           <Button
             variant="danger"
