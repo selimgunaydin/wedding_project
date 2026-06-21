@@ -36,9 +36,13 @@ export async function GET(request: NextRequest, context: Context) {
     return NextResponse.json({ error: "Medya bulunamadı." }, { status: 404 });
   }
 
+  // ?thumb=1 -> küçük önizlemeyi sun (varsa). Yoksa orijinale düşeriz.
+  const wantsThumb = request.nextUrl.searchParams.get("thumb") === "1";
+  const servedPath = wantsThumb && upload.thumbnail_path ? upload.thumbnail_path : upload.file_path;
+
   try {
     const object = await getObject({
-      filePath: upload.file_path,
+      filePath: servedPath,
       range: request.headers.get("range"),
     });
 

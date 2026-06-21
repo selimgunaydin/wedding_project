@@ -17,10 +17,11 @@ type MediaGridProps = {
   onDelete: (id: string) => void;
 };
 
-// Izgarada küçük thumbnail'ı gösteririz (varsa); yoksa orijinale düşeriz.
-// Her ikisi de Contabo public URL'inden gelir, Node sunucusuna uğramaz.
+// Izgarada küçük önizlemeyi aynı origin'deki proxy üzerinden çekeriz
+// (?thumb=1). Cross-origin Contabo URL'leri CSP'ye takıldığı için proxy
+// kullanıyoruz; thumbnail küçük olduğu için sunucu yükü ihmal edilebilir.
 function getMediaViewUrl(upload: UploadRecord) {
-  return upload.thumbnail_url ?? upload.file_url;
+  return `/api/admin/uploads/${upload.id}/file?thumb=1`;
 }
 
 // İndirme orijinal dosya adıyla insin diye proxy ucundan gider.

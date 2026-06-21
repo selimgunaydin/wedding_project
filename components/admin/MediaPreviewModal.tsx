@@ -11,7 +11,7 @@ type MediaPreviewModalProps = {
 };
 
 function getMediaViewUrl(upload: UploadRecord) {
-  return upload.file_url;
+  return `/api/admin/uploads/${upload.id}/file`;
 }
 
 function getGuestName(upload: UploadRecord) {
