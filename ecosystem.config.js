@@ -21,7 +21,7 @@ module.exports = {
       // PM2 cluster modunun portu worker'lar arasında paylaşabilmesi için
       // doğrudan next binary'sini çalıştırıyoruz (npm script üzerinden değil).
       script: "node_modules/next/dist/bin/next",
-      args: "start -p 3000",
+      args: "start -p 3061",
       exec_mode: "cluster",
       // CPU çekirdeği sayısı kadar worker. VPS küçükse (örn 1-2 çekirdek)
       // sabit bir sayı verebilirsiniz, örn: instances: 2
