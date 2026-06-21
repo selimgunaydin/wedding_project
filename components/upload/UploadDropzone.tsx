@@ -5,12 +5,7 @@ import { AlertCircle, Camera, CheckCircle2, MessageCircle, Send, UploadCloud, Us
 import { Button } from "@/components/ui/Button";
 import { UploadFileList } from "@/components/upload/UploadFileList";
 import type { UploadItemState } from "@/components/upload/UploadProgressItem";
-import {
-  ACCEPTED_MIME_TYPES,
-  MAX_FILES_PER_UPLOAD,
-  MAX_IMAGE_SIZE_MB,
-  MAX_VIDEO_SIZE_MB
-} from "@/lib/constants";
+import { ACCEPTED_MIME_TYPES, MAX_IMAGE_SIZE_MB, MAX_VIDEO_SIZE_MB } from "@/lib/constants";
 import { validateFileByRules } from "@/lib/validators";
 import { cn } from "@/lib/utils";
 
@@ -39,26 +34,17 @@ export function UploadDropzone({ eventSlug }: UploadDropzoneProps) {
     setMessage(null);
 
     setItems((current) => {
-      const slots = MAX_FILES_PER_UPLOAD - current.length;
-      const selected = incoming.slice(0, Math.max(slots, 0));
-      const next = selected.map((file) => {
+      const next = incoming.map((file) => {
         const error = validateFileByRules(file.type, file.size);
 
         return {
           id: crypto.randomUUID(),
           file,
-          progress: error ? 0 : 0,
+          progress: 0,
           status: error ? ("error" as const) : ("ready" as const),
           error: error ?? undefined
         };
       });
-
-      if (incoming.length > slots) {
-        setMessage({
-          text: `Tek seferde en fazla ${MAX_FILES_PER_UPLOAD} dosya seçebilirsiniz.`,
-          tone: "warning"
-        });
-      }
 
       return [...current, ...next];
     });
@@ -172,7 +158,7 @@ export function UploadDropzone({ eventSlug }: UploadDropzoneProps) {
         </div>
         <h2 className="mt-3 font-serif text-2xl leading-tight">Fotoğraf veya videonuzu seçin</h2>
         <p className="mx-auto mt-1.5 max-w-md text-xs leading-5 text-muted-foreground">
-          Tek seferde {MAX_FILES_PER_UPLOAD} dosyaya kadar yükleyebilirsiniz. Fotoğraflar {MAX_IMAGE_SIZE_MB} MB, videolar{" "}
+          Dilediğiniz kadar fotoğraf veya video yükleyebilirsiniz. Fotoğraflar {MAX_IMAGE_SIZE_MB} MB, videolar{" "}
           {MAX_VIDEO_SIZE_MB} MB ile sınırlıdır.
         </p>
 

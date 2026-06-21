@@ -2,7 +2,6 @@ export const APP_NAME = "Ecem Sıla & Selim";
 
 export const MAX_IMAGE_SIZE_MB = 15;
 export const MAX_VIDEO_SIZE_MB = 300;
-export const MAX_FILES_PER_UPLOAD = 10;
 
 export const IMAGE_MIME_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"] as const;
 export const VIDEO_MIME_TYPES = ["video/mp4", "video/quicktime", "video/webm"] as const;
