@@ -10,8 +10,8 @@ type MediaPreviewModalProps = {
   onClose: () => void;
 };
 
-function getAdminMediaUrl(upload: UploadRecord) {
-  return `/api/admin/uploads/${upload.id}/file`;
+function getMediaViewUrl(upload: UploadRecord) {
+  return upload.file_url;
 }
 
 function getGuestName(upload: UploadRecord) {
@@ -35,9 +35,9 @@ export function MediaPreviewModal({ upload, onClose }: MediaPreviewModalProps) {
         </div>
         <div className="grid max-h-[76vh] place-items-center overflow-auto bg-ink/5 p-4">
           {upload.file_type === "image" ? (
-            <img src={getAdminMediaUrl(upload)} alt={upload.original_file_name} className="max-h-[70vh] rounded-lg object-contain" />
+            <img src={getMediaViewUrl(upload)} alt={upload.original_file_name} className="max-h-[70vh] rounded-lg object-contain" />
           ) : (
-            <video src={getAdminMediaUrl(upload)} controls preload="metadata" className="max-h-[70vh] w-full rounded-lg" />
+            <video src={getMediaViewUrl(upload)} controls preload="metadata" className="max-h-[70vh] w-full rounded-lg" />
           )}
         </div>
         {upload.uploaded_by_note ? (

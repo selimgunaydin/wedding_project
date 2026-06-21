@@ -17,8 +17,15 @@ type MediaGridProps = {
   onDelete: (id: string) => void;
 };
 
-function getAdminMediaUrl(upload: UploadRecord, download = false) {
-  return `/api/admin/uploads/${upload.id}/file${download ? "?download=1" : ""}`;
+// Görüntüleme doğrudan Contabo public URL'inden yapılır; böylece tam boyutlu
+// dosyalar Node sunucusu üzerinden geçmez (panel çok daha hafifler).
+function getMediaViewUrl(upload: UploadRecord) {
+  return upload.file_url;
+}
+
+// İndirme orijinal dosya adıyla insin diye proxy ucundan gider.
+function getAdminDownloadUrl(upload: UploadRecord) {
+  return `/api/admin/uploads/${upload.id}/file?download=1`;
 }
 
 function getGuestName(upload: UploadRecord) {
@@ -36,9 +43,15 @@ export function MediaGrid({ uploads, selectedIds, onSelect, onPreview, onApprove
         <article key={upload.id} className="overflow-hidden rounded-xl border border-border bg-white/70 shadow-line">
           <div className="relative aspect-[4/3] bg-muted">
             {upload.file_type === "image" ? (
-              <img src={getAdminMediaUrl(upload)} alt={upload.original_file_name} className="h-full w-full object-cover" />
+              <img
+                src={getMediaViewUrl(upload)}
+                alt={upload.original_file_name}
+                loading="lazy"
+                decoding="async"
+                className="h-full w-full object-cover"
+              />
             ) : (
-              <video src={getAdminMediaUrl(upload)} preload="metadata" className="h-full w-full object-cover" />
+              <video src={getMediaViewUrl(upload)} preload="metadata" className="h-full w-full object-cover" />
             )}
             <label className="absolute left-3 top-3 rounded-lg bg-white/85 p-2">
               <input
@@ -64,7 +77,7 @@ export function MediaGrid({ uploads, selectedIds, onSelect, onPreview, onApprove
               <Button size="icon" variant="ghost" onClick={() => onPreview(upload)} aria-label="Önizle">
                 <Eye className="h-4 w-4" />
               </Button>
-              <a href={getAdminMediaUrl(upload, true)} download className="inline-flex h-10 w-10 items-center justify-center rounded-lg hover:bg-muted">
+              <a href={getAdminDownloadUrl(upload)} download className="inline-flex h-10 w-10 items-center justify-center rounded-lg hover:bg-muted">
                 <Download className="h-4 w-4" />
               </a>
               <Button size="icon" variant="ghost" onClick={() => onApprove(upload.id)} aria-label="Onayla">

@@ -22,8 +22,8 @@ const statusLabels = {
   rejected: "Reddedildi"
 };
 
-function getAdminMediaUrl(upload: UploadRecord, download = false) {
-  return `/api/admin/uploads/${upload.id}/file${download ? "?download=1" : ""}`;
+function getAdminDownloadUrl(upload: UploadRecord) {
+  return `/api/admin/uploads/${upload.id}/file?download=1`;
 }
 
 function getGuestName(upload: UploadRecord) {
@@ -82,7 +82,7 @@ export function MediaTable({ uploads, selectedIds, onSelect, onPreview, onApprov
                       <Eye className="h-4 w-4" />
                     </Button>
                     <a
-                      href={getAdminMediaUrl(upload, true)}
+                      href={getAdminDownloadUrl(upload)}
                       download
                       className="inline-flex h-10 w-10 items-center justify-center rounded-lg hover:bg-muted"
                       aria-label="İndir"
