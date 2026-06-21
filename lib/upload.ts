@@ -56,6 +56,12 @@ export function buildStoragePath(eventSlug: string, fileName: string, mimeType: 
   return `events/${eventSlug}/${folder}/${Date.now()}-${randomId}-${safeName}`;
 }
 
+// Orijinal görsel yolundan thumbnail yolunu türetir:
+// events/<slug>/images/<dosya>  ->  events/<slug>/thumbs/<dosya>.webp
+export function buildThumbnailPath(originalFilePath: string) {
+  return `${originalFilePath.replace("/images/", "/thumbs/")}.webp`;
+}
+
 export function assertStoragePathBelongsToEvent(filePath: string, eventSlug: string) {
   return filePath.startsWith(`events/${eventSlug}/images/`) || filePath.startsWith(`events/${eventSlug}/videos/`);
 }

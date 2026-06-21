@@ -17,10 +17,10 @@ type MediaGridProps = {
   onDelete: (id: string) => void;
 };
 
-// Görüntüleme doğrudan Contabo public URL'inden yapılır; böylece tam boyutlu
-// dosyalar Node sunucusu üzerinden geçmez (panel çok daha hafifler).
+// Izgarada küçük thumbnail'ı gösteririz (varsa); yoksa orijinale düşeriz.
+// Her ikisi de Contabo public URL'inden gelir, Node sunucusuna uğramaz.
 function getMediaViewUrl(upload: UploadRecord) {
-  return upload.file_url;
+  return upload.thumbnail_url ?? upload.file_url;
 }
 
 // İndirme orijinal dosya adıyla insin diye proxy ucundan gider.

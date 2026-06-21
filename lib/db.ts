@@ -65,6 +65,8 @@ export async function createUploadRecord(input: {
   originalFileName: string;
   filePath: string;
   fileUrl: string;
+  thumbnailPath?: string | null;
+  thumbnailUrl?: string | null;
   fileType: UploadFileType;
   mimeType: string;
   fileSize: number;
@@ -85,6 +87,8 @@ export async function createUploadRecord(input: {
       original_file_name: input.originalFileName,
       file_path: input.filePath,
       file_url: input.fileUrl,
+      thumbnail_path: input.thumbnailPath ?? null,
+      thumbnail_url: input.thumbnailUrl ?? null,
       file_type: input.fileType,
       mime_type: input.mimeType,
       file_size: input.fileSize,

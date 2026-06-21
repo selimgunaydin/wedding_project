@@ -27,6 +27,9 @@ export async function DELETE(request: NextRequest, context: Context) {
 
   try {
     await deleteObject(upload.file_path);
+    if (upload.thumbnail_path) {
+      await deleteObject(upload.thumbnail_path).catch((error) => console.error("thumbnail delete failed", error));
+    }
     await deleteUploadRecord(id);
     return NextResponse.json({ ok: true });
   } catch (error) {

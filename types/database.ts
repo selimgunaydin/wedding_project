@@ -23,6 +23,8 @@ export type UploadRecord = {
   original_file_name: string;
   file_path: string;
   file_url: string;
+  thumbnail_path: string | null;
+  thumbnail_url: string | null;
   file_type: UploadFileType;
   mime_type: string;
   file_size: number;

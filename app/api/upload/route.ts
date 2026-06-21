@@ -1,9 +1,14 @@
 import { Readable } from "node:stream";
 import type { ReadableStream as NodeReadableStream } from "node:stream/web";
 import { NextResponse } from "next/server";
+import { IMAGE_MIME_TYPES } from "@/lib/constants";
 import { createUploadRecord, getEventBySlug } from "@/lib/db";
-import { deleteObject, uploadObject } from "@/lib/s3";
+import { deleteObject, uploadImageBuffer, uploadObject } from "@/lib/s3";
 import { eventSlugSchema, optionalGuestNameSchema, optionalGuestNoteSchema, validateFileByRules } from "@/lib/validators";
+
+// Bu boyutun altındaki görseller belleğe alınıp thumbnail üretilir. Üstündeki
+// dosyalar (ve tüm videolar) belleği şişirmemek için doğrudan stream edilir.
+const THUMBNAIL_SOURCE_MAX_BYTES = 40 * 1024 * 1024;
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -71,18 +76,37 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Dosya içeriği okunamadı." }, { status: 400 });
   }
 
-  let uploadedFile: Awaited<ReturnType<typeof uploadObject>> | null = null;
+  const useThumbnail = IMAGE_MIME_TYPES.includes(mimeType as never) && fileSize <= THUMBNAIL_SOURCE_MAX_BYTES;
+
+  let uploadedFile:
+    | (Awaited<ReturnType<typeof uploadObject>> & { thumbnailPath?: string | null; thumbnailUrl?: string | null })
+    | null = null;
 
   try {
-    uploadedFile = await uploadObject({
-      eventSlug: event.slug,
-      fileName,
-      mimeType,
-      body: Readable.fromWeb(request.body as unknown as NodeReadableStream<Uint8Array>)
-    });
+    if (useThumbnail) {
+      // Görseli belleğe al, thumbnail üret, orijinal + thumbnail'ı yükle.
+      const chunks: Buffer[] = [];
+      for await (const chunk of Readable.fromWeb(request.body as unknown as NodeReadableStream<Uint8Array>)) {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      }
+      const buffer = Buffer.concat(chunks);
 
-    if (uploadedFile.uploadedBytes !== fileSize) {
-      throw new Error("Dosya sunucuya eksik ulaştı. Proxy upload limitlerini kontrol edin.");
+      if (buffer.length !== fileSize) {
+        throw new Error("Dosya sunucuya eksik ulaştı. Proxy upload limitlerini kontrol edin.");
+      }
+
+      uploadedFile = await uploadImageBuffer({ eventSlug: event.slug, fileName, mimeType, buffer });
+    } else {
+      uploadedFile = await uploadObject({
+        eventSlug: event.slug,
+        fileName,
+        mimeType,
+        body: Readable.fromWeb(request.body as unknown as NodeReadableStream<Uint8Array>)
+      });
+
+      if (uploadedFile.uploadedBytes !== fileSize) {
+        throw new Error("Dosya sunucuya eksik ulaştı. Proxy upload limitlerini kontrol edin.");
+      }
     }
 
     const upload = await createUploadRecord({
@@ -91,6 +115,8 @@ export async function POST(request: Request) {
       originalFileName: fileName,
       filePath: uploadedFile.filePath,
       fileUrl: uploadedFile.fileUrl,
+      thumbnailPath: uploadedFile.thumbnailPath ?? null,
+      thumbnailUrl: uploadedFile.thumbnailUrl ?? null,
       fileType: uploadedFile.fileType,
       mimeType,
       fileSize,
@@ -104,6 +130,11 @@ export async function POST(request: Request) {
       await deleteObject(uploadedFile.filePath).catch((deleteError) => {
         console.error("upload cleanup failed", deleteError);
       });
+      if (uploadedFile.thumbnailPath) {
+        await deleteObject(uploadedFile.thumbnailPath).catch((deleteError) => {
+          console.error("thumbnail cleanup failed", deleteError);
+        });
+      }
     }
 
     console.error("server upload failed", error);

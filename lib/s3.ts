@@ -4,12 +4,17 @@ import {
   CreateMultipartUploadCommand,
   DeleteObjectCommand,
   GetObjectCommand,
+  PutObjectCommand,
   S3Client,
   UploadPartCommand,
   type CompletedPart,
 } from "@aws-sdk/client-s3";
 import type { Readable } from "node:stream";
-import { buildStoragePath, getFileTypeFromMime } from "@/lib/upload";
+import sharp from "sharp";
+import { buildStoragePath, buildThumbnailPath, getFileTypeFromMime } from "@/lib/upload";
+
+// Izgarada gösterilecek küçük önizlemenin uzun kenarı (px).
+const THUMBNAIL_MAX_EDGE = 480;
 
 const MULTIPART_CHUNK_SIZE = 8 * 1024 * 1024;
 const MAX_RETRIES = 3;
@@ -187,6 +192,64 @@ export async function uploadObject(input: UploadObjectInput) {
     fileName: filePath.split("/").at(-1)!,
     fileType,
     uploadedBytes,
+  };
+}
+
+async function putBuffer(filePath: string, body: Buffer, contentType: string) {
+  const client = getS3Client();
+  await client.send(new PutObjectCommand({
+    Bucket: process.env.CONTABO_S3_BUCKET_NAME,
+    Key: filePath,
+    Body: body,
+    ContentType: contentType,
+    ContentLength: body.length,
+  }));
+}
+
+export async function generateThumbnail(source: Buffer) {
+  return sharp(source, { failOn: "none" })
+    .rotate() // EXIF yönünü uygula
+    .resize(THUMBNAIL_MAX_EDGE, THUMBNAIL_MAX_EDGE, { fit: "inside", withoutEnlargement: true })
+    .webp({ quality: 72 })
+    .toBuffer();
+}
+
+// Görseli tek PutObject ile yükler ve yanında küçük bir webp thumbnail üretir.
+// Thumbnail üretimi başarısız olursa (bozuk görsel vb.) orijinal yine de yüklenir,
+// thumbnail alanları null döner ve panel orijinale geri düşer.
+export async function uploadImageBuffer(input: {
+  eventSlug: string;
+  fileName: string;
+  mimeType: string;
+  buffer: Buffer;
+}) {
+  const fileType = getFileTypeFromMime(input.mimeType);
+  if (fileType !== "image") throw new Error("Bu fonksiyon yalnızca görseller içindir.");
+
+  const filePath = buildStoragePath(input.eventSlug, input.fileName, input.mimeType);
+  await putBuffer(filePath, input.buffer, input.mimeType);
+
+  let thumbnailPath: string | null = null;
+  let thumbnailUrl: string | null = null;
+  try {
+    const thumbnail = await generateThumbnail(input.buffer);
+    thumbnailPath = buildThumbnailPath(filePath);
+    await putBuffer(thumbnailPath, thumbnail, "image/webp");
+    thumbnailUrl = getPublicFileUrl(thumbnailPath);
+  } catch (error) {
+    console.error("thumbnail oluşturulamadı", error);
+    thumbnailPath = null;
+    thumbnailUrl = null;
+  }
+
+  return {
+    filePath,
+    fileUrl: getPublicFileUrl(filePath),
+    fileName: filePath.split("/").at(-1)!,
+    fileType,
+    uploadedBytes: input.buffer.length,
+    thumbnailPath,
+    thumbnailUrl,
   };
 }
 

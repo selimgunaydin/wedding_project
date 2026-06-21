@@ -28,7 +28,15 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Reddedilen medya silinmez; arşivde kalmalıdır." }, { status: 400 });
       }
 
-      await Promise.all(uploads.map((upload) => deleteObject(upload!.file_path)));
+      await Promise.all(
+        uploads.flatMap((upload) => {
+          const ops = [deleteObject(upload!.file_path)];
+          if (upload!.thumbnail_path) {
+            ops.push(deleteObject(upload!.thumbnail_path).catch((error) => console.error("thumbnail delete failed", error)));
+          }
+          return ops;
+        })
+      );
       await bulkDeleteUploadRecords(parsed.data.ids);
       return NextResponse.json({ ok: true });
     }
