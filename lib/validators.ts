@@ -1,11 +1,5 @@
 import { z } from "zod";
-import {
-  ACCEPTED_MIME_TYPES,
-  IMAGE_MIME_TYPES,
-  MAX_IMAGE_SIZE_BYTES,
-  MAX_VIDEO_SIZE_BYTES,
-  VIDEO_MIME_TYPES
-} from "@/lib/constants";
+import { ACCEPTED_MIME_TYPES, IMAGE_MIME_TYPES, VIDEO_MIME_TYPES } from "@/lib/constants";
 
 export const eventSlugSchema = z
   .string()
@@ -60,17 +54,9 @@ export const adminUploadFilterSchema = z.object({
   fileType: z.enum(["image", "video"]).optional()
 });
 
-export function validateFileByRules(mimeType: string, fileSize: number) {
-  if (IMAGE_MIME_TYPES.includes(mimeType as never)) {
-    return fileSize <= MAX_IMAGE_SIZE_BYTES
-      ? null
-      : `Fotoğraf en fazla ${MAX_IMAGE_SIZE_BYTES / 1024 / 1024} MB olabilir.`;
-  }
-
-  if (VIDEO_MIME_TYPES.includes(mimeType as never)) {
-    return fileSize <= MAX_VIDEO_SIZE_BYTES
-      ? null
-      : `Video en fazla ${MAX_VIDEO_SIZE_BYTES / 1024 / 1024} MB olabilir.`;
+export function validateFileByRules(mimeType: string, _fileSize: number) {
+  if (IMAGE_MIME_TYPES.includes(mimeType as never) || VIDEO_MIME_TYPES.includes(mimeType as never)) {
+    return null;
   }
 
   return "Bu dosya türü desteklenmiyor.";

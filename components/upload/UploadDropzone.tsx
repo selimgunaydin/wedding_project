@@ -5,7 +5,7 @@ import { AlertCircle, Camera, CheckCircle2, MessageCircle, Send, UploadCloud, Us
 import { Button } from "@/components/ui/Button";
 import { UploadFileList } from "@/components/upload/UploadFileList";
 import type { UploadItemState } from "@/components/upload/UploadProgressItem";
-import { ACCEPTED_MIME_TYPES, MAX_IMAGE_SIZE_MB, MAX_VIDEO_SIZE_MB } from "@/lib/constants";
+import { ACCEPTED_MIME_TYPES } from "@/lib/constants";
 import { validateFileByRules } from "@/lib/validators";
 import { cn } from "@/lib/utils";
 
@@ -158,8 +158,7 @@ export function UploadDropzone({ eventSlug }: UploadDropzoneProps) {
         </div>
         <h2 className="mt-3 font-serif text-2xl leading-tight">Fotoğraf veya videonuzu seçin</h2>
         <p className="mx-auto mt-1.5 max-w-md text-xs leading-5 text-muted-foreground">
-          Dilediğiniz kadar fotoğraf veya video yükleyebilirsiniz. Fotoğraflar {MAX_IMAGE_SIZE_MB} MB, videolar{" "}
-          {MAX_VIDEO_SIZE_MB} MB ile sınırlıdır.
+          Dilediğiniz kadar fotoğraf veya video yükleyebilirsiniz.
         </p>
 
         <input
